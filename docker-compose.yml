@@ -1,0 +1,15 @@
+services:
+  api:
+    container_name: sage_api_gateway
+    build:
+      context: ./services/api_gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/api_gateway:/app
+      - /app/venv/  # Preserve the venv directory
+    environment:
+      - PYTHONPATH=/app
+      - PATH=/app/venv/bin:$PATH
+    command: /app/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload --loop uvloop
