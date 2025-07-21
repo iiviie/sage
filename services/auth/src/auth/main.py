@@ -3,9 +3,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.endpoints import auth
-from config.database import engine
-from models.base import Base
+from auth.api.endpoints import auth
+from auth.config.database import engine
+from auth.models.base import Base
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

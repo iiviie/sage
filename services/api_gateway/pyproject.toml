@@ -1,7 +1,20 @@
 [project]
 name = "api-gateway"
 version = "0.1.0"
-description = "Add your description here"
+description = "API Gateway Service"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi==0.109.2",
+    "uvicorn==0.27.1",
+    "pydantic==2.6.1",
+    "uvloop==0.19.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["api_gateway"]

@@ -2,12 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from decouple import config
 
-# Get environment-specific configuration
-ENV = config('ENV', default='development')
-if ENV == 'production':
-    DATABASE_URL = config('PROD_DATABASE_URL')
-else:
-    DATABASE_URL = config('DEV_DATABASE_URL')
+# Get database URL from environment variable with a default for local development
+DATABASE_URL = config(
+    'DATABASE_URL',
+    default='postgresql://postgres:postgres@localhost:5432/auth_db'
+)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

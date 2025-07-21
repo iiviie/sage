@@ -1,0 +1,47 @@
+services:
+  sage_api_gateway:
+    build:
+      context: ./services/api_gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./services/api_gateway/.env
+    networks:
+      - sage_network
+
+  sage_auth_service:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./services/auth/.env
+    depends_on:
+      sage_auth_db:
+        condition: service_healthy
+    networks:
+      - sage_network
+
+  sage_auth_db:
+    image: postgres:16-alpine
+    env_file:
+      - ./services/auth/.env
+    healthcheck:
+      test: pg_isready -U postgres -d auth_db
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - sage_auth_data:/var/lib/postgresql/data
+    networks:
+      - sage_network
+
+volumes:
+  sage_auth_data:
+
+networks:
+  sage_network:
+    driver: bridge 
