@@ -9,6 +9,9 @@ services:
       - ./services/api_gateway/.env
     networks:
       - sage_network
+    volumes:
+      - ./services/api_gateway/src:/app/src
+    command: python -m uvicorn api_gateway.main:app --host 0.0.0.0 --port 8000 --reload --loop uvloop --reload-dir /app/src
 
   sage_auth_service:
     build:
@@ -23,6 +26,9 @@ services:
         condition: service_healthy
     networks:
       - sage_network
+    volumes:
+      - ./services/auth/src:/app/src
+    command: python -m uvicorn auth.main:app --host 0.0.0.0 --port 8001 --reload --loop uvloop --reload-dir /app/src
 
   sage_auth_db:
     image: postgres:16-alpine

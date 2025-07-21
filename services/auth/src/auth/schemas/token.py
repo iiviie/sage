@@ -1,15 +1,16 @@
 """Token schema definitions using Pydantic models."""
 
-from typing import Optional
 from pydantic import BaseModel
 
 
+class LoginRequest(BaseModel):
+    """Schema for login request."""
+    username: str
+    password: str
+
+
 class Token(BaseModel):
-    """Token schema."""
+    """Schema for token response."""
     access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    """Token payload schema."""
-    username: Optional[str] = None 
+    refresh_token: str
+    token_type: str = "bearer" 

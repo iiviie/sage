@@ -45,5 +45,5 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src:$PYTHONPATH"
 
-# Default command
-CMD ["python", "-m", "uvicorn", "auth.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Default command with uvloop and reload enabled
+CMD ["python", "-m", "uvicorn", "auth.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload", "--loop", "uvloop", "--reload-dir", "/app/src"]

@@ -4,46 +4,43 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from auth.models.user import User
 from auth.schemas.user import UserCreate, UserResponse
+from auth.schemas.token import LoginRequest, Token
 from auth.utils.auth import (
     authenticate_user,
     get_current_active_user,
     get_password_hash,
 )
 from auth.utils.jwt import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    Token,
-    create_access_token,
+    create_tokens,
 )
 from auth.config.database import get_db
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@router.post("/token", response_model=Token)
-async def login_for_access_token(
-    db: Session = Depends(get_db),  # You'll need to implement get_db
-    form_data: OAuth2PasswordRequestForm = Depends()
+@router.post("/login", response_model=Token)
+async def login(
+    login_data: LoginRequest,
+    db: Session = Depends(get_db),
 ) -> Any:
     """
-    OAuth2 compatible token login, get an access token for future requests.
+    Login endpoint that accepts username and password and returns access and refresh tokens.
     """
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = authenticate_user(db, login_data.username, login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    return create_tokens({"sub": user.username})
 
 
 @router.post("/register", response_model=UserResponse)

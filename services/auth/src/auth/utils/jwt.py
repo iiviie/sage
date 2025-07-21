@@ -1,59 +1,60 @@
 """JWT token handling utilities."""
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, Dict, Optional
 
+from decouple import config
 from jose import JWTError, jwt
+from pydantic import ValidationError
 
-from ..schemas.token import Token, TokenData
+from auth.schemas.token import Token
 
-# TODO: Move these to environment variables
-SECRET_KEY = "your-secret-key-keep-it-secret"  # Change this!
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# Configuration
+SECRET_KEY = config("JWT_SECRET_KEY")
+ALGORITHM = config("JWT_ALGORITHM", default="HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=30, cast=int)
+REFRESH_TOKEN_EXPIRE_DAYS = config("REFRESH_TOKEN_EXPIRE_DAYS", default=7, cast=int)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Create a new JWT access token.
-    
-    Args:
-        data: Data to encode in the token
-        expires_delta: Optional expiration time, defaults to 30 minutes
-        
-    Returns:
-        Encoded JWT token as string
-    """
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    """Create a new access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    to_encode.update({"exp": expire, "type": "access"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def verify_token(token: str, credentials_exception) -> TokenData:
-    """
-    Verify a JWT token and return its payload.
+def create_refresh_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    """Create a new refresh token."""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     
-    Args:
-        token: JWT token to verify
-        credentials_exception: Exception to raise if verification fails
-        
-    Returns:
-        TokenData containing the username from the token
-        
-    Raises:
-        credentials_exception: If token is invalid
-    """
+    to_encode.update({"exp": expire, "type": "refresh"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_tokens(data: Dict[str, Any]) -> Token:
+    """Create both access and refresh tokens."""
+    access_token = create_access_token(data)
+    refresh_token = create_refresh_token(data)
+    
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
+
+
+def verify_token(token: str) -> Dict[str, Any]:
+    """Verify a token and return its payload."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        return TokenData(username=username)
-    except JWTError:
-        raise credentials_exception 
+        return payload
+    except (JWTError, ValidationError):
+        return None 
